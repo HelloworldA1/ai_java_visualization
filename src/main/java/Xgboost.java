@@ -2,6 +2,7 @@ import ml.dmlc.xgboost4j.java.Booster;
 import ml.dmlc.xgboost4j.java.DMatrix;
 import ml.dmlc.xgboost4j.java.XGBoost;
 import ml.dmlc.xgboost4j.java.XGBoostError;
+import org.apache.commons.math3.util.Precision;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,17 +35,42 @@ public class Xgboost {
         Map<String,DMatrix> watches = new HashMap<String,DMatrix>(){
             {
                 put("train",trainMat);
-                put("test",testMat);
+//                put("test",testMat);
             }
         };
 
         try{
             Booster booster = XGBoost.train(trainMat,params,nEpoch,watches,null,null);
+
+            float[][] testPred = booster.predict(testMat);
+            double testAcc = calculateAccuracy(testPred, testMat);
+            System.out.println(testAcc);
+
             booster.saveModel("Intermediate_steps_file\\xgboost_model");
         }catch (XGBoostError xgBoostError){
             xgBoostError.printStackTrace();
         }
 
+    }
+
+    private static double calculateAccuracy(float[][] predictions, DMatrix dMatrix) {
+        try {
+            float[] labels = dMatrix.getLabel();
+            int correctCount = 0;
+
+            for (int i = 0; i < predictions.length; i++) {
+                int predictedLabel = Math.round(predictions[i][0]);
+                int actualLabel = (int) labels[i];
+                if (predictedLabel == actualLabel) {
+                    correctCount++;
+                }
+            }
+
+            return (double) correctCount / predictions.length;
+        } catch (XGBoostError e) {
+            e.printStackTrace();
+            return 0.0;
+        }
     }
 
     public static void main(String[] args) {

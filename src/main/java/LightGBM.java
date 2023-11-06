@@ -102,6 +102,6 @@ public class LightGBM {
     }
 
     public static void main(String[] args) throws Exception{
-        lightgbm("data\\\\flower_labels.csv",50);
+        lightgbm("data\\flower_labels.csv",50);
     }
 }
