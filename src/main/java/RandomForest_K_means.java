@@ -2,6 +2,7 @@ import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.classifiers.trees.RandomForest;
 import weka.clusterers.SimpleKMeans;
+import weka.core.Attribute;
 import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.converters.ArffLoader;
@@ -56,11 +57,25 @@ public class RandomForest_K_means {
             randomForest.setOptions(weka.core.Utils.splitOptions("-K "+NumAttribute));//特征子采样参数，默认0
             randomForest.buildClassifier(myDataset.trainset);
 
-            Evaluation eval = new Evaluation(myDataset.trainset);
-            eval.evaluateModel(randomForest,myDataset.testset);
+            Evaluation eval = new Evaluation(myDataset.testset);
+            double[] pre = eval.evaluateModel(randomForest,myDataset.testset);
+            for(int i=0;i<pre.length;i++){
+                pre[i] = Math.round(pre[i]);
+            }
+            for(double num:pre){
+                System.out.println(num);
+            }
+
+            int labelAttributeIndex = myDataset.testset.numAttributes()-1;
+            Attribute labelAttribute = myDataset.testset.attribute(labelAttributeIndex);
+
+            for(int i=0;i<myDataset.testset.numInstances();i++){
+                System.out.println(myDataset.testset.get(i));
+            }
             // 输出准确率
-            System.out.println(eval.toSummaryString("title",true));
-            System.out.println(eval.correct());
+//            System.out.println(eval.toSummaryString("title",true));
+//            System.out.println(eval.pctCorrect());
+//            System.out.println(eval.pctIncorrect());
 
 
         }catch (Exception e){
@@ -72,6 +87,7 @@ public class RandomForest_K_means {
     public static void main(String[] args) {
         MyDataset myDataset = new MyDataset("data\\flower_labels.csv");
         myDataset.dataset_Partitioning(0.9);
+        System.out.println(myDataset.testset);
         RandomForest(myDataset,100,0,1,0);
 //        MyDataset myDataset = new MyDataset("data\flower.csv");
 //        K_means(myDataset.dataset,3);

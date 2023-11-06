@@ -93,9 +93,20 @@ public class CNN {
 
         MultiLayerNetwork model = new MultiLayerNetwork(conf);
         model.init();
-        model.setListeners(new ScoreIterationListener(10));  //Print score every 10 parameter updates
+//        model.setListeners(new ScoreIterationListener(10));  //Print score every 10 parameter updates
 
-        model.fit(trainIter, nEpochs);
+//        System.out.println("/////////");
+        for(int i = 0;i<nEpochs;i++) {
+            model.fit(trainIter);
+            double score = model.score();
+//            System.out.println("1111");
+            System.out.println(score);
+//            System.out.println("2222");
+//            loss.put(index,score);
+//            index=index+1;
+        }
+
+//        model.fit(trainIter, nEpochs);
 
         System.out.println("Evaluate model....");
         Evaluation eval = model.evaluate(testIter);
