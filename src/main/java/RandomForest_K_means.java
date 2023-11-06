@@ -1,3 +1,4 @@
+import org.json.JSONObject;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.classifiers.trees.RandomForest;
@@ -16,38 +17,64 @@ import weka.core.converters.CSVLoader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class RandomForest_K_means {
     //k-means
-    public static void K_means(Instances datas,int NUmClusters){
+    public static JSONObject K_means(Instances datas,int NUmClusters){
+        JSONObject  jsonObject = new JSONObject();
         try{
             SimpleKMeans kMeans = new SimpleKMeans();
             kMeans.setPreserveInstancesOrder(true);
             kMeans.setNumClusters(NUmClusters); // 设置簇的数量
             kMeans.buildClusterer(datas); // 训练模型
 
+            Map<String,String> pre_km = new HashMap<>();
+
             // 获取聚类中心
             Instances centroids = kMeans.getClusterCentroids();
-            System.out.println("聚类中心:");
-            System.out.println(centroids);
-
+            for(int i=0;i<NUmClusters;i++) {
+                String center = centroids.get(0).toString();
+                pre_km.put("center"+Integer.toString(i),center);
+            }
             // 获取簇内误差平方和
             double squaredErrors = kMeans.getSquaredError();
-            System.out.println("簇内误差平方和:"+squaredErrors);
+            pre_km.put("SE",Double.toString(squaredErrors));
+
+            String cluster_0 = "";
+            String cluster_1 = "";
+            String cluster_2 = "";
 
             for (int i = 0; i < datas.numInstances(); i++) {
                 int cluster = kMeans.clusterInstance(datas.instance(i));
-                System.out.println("Instance " + (i + 1) + " is in cluster " + cluster);
+                if(cluster == 0){
+                    cluster_0=cluster_0+Integer.toString(i+1)+",";
+                }else if(cluster == 1){
+                    cluster_1=cluster_1+Integer.toString(i+1)+",";
+                }else{
+                    cluster_2 = cluster_2+Integer.toString(i+1)+",";
+                }
             }
+
+            pre_km.put("cluster_0",cluster_0);
+            pre_km.put("cluster_1",cluster_1);
+            pre_km.put("cluster_2",cluster_2);
+
+            jsonObject.put("performance",pre_km);
+            System.out.println(pre_km);
+
         }catch (Exception e){
             e.printStackTrace();
         }
+        return jsonObject;
     }
 
 
     //randomforest
-    public static void RandomForest(MyDataset myDataset,int NumTrees,int depth,int NumSeed,int NumAttribute)  {
+    public static JSONObject RandomForest(MyDataset myDataset,int NumTrees,int depth,int NumSeed,int NumAttribute)  {
+        JSONObject jsonObject = new JSONObject();
 
         try {
             RandomForest randomForest = new RandomForest();
@@ -63,34 +90,77 @@ public class RandomForest_K_means {
                 pre[i] = Math.round(pre[i]);
             }
             for(double num:pre){
-                System.out.println(num);
+//                System.out.println(num);
             }
 
-            int labelAttributeIndex = myDataset.testset.numAttributes()-1;
-            Attribute labelAttribute = myDataset.testset.attribute(labelAttributeIndex);
+            double[] org = new double[myDataset.testset.numInstances()];
 
             for(int i=0;i<myDataset.testset.numInstances();i++){
-                System.out.println(myDataset.testset.get(i));
-
+                org[i] = Double.parseDouble(myDataset.testset.get(i).toString().split(",")[4]);
             }
+
+            Map<String,Double> pre_model = new HashMap<>();
+
+//            System.out.println(get_acc(org,pre));
+
+            pre_model.put("ACC",get_acc(org,pre));
+//            System.out.println(eval.recall(3));
             // 输出准确率
-//            System.out.println(eval.toSummaryString("title",true));
-//            System.out.println(eval.pctCorrect());
-//            System.out.println(eval.pctIncorrect());
 
+            System.out.println(eval.toSummaryString("",true));
+            for(String item:eval.toSummaryString("",true).split("\n")){
+                if(item.contains("Correlation coefficient")){
+                    double correlatin = Double.parseDouble(item.split("                  ")[1]);
+                    pre_model.put("CC",correlatin);
+                }else if(item.contains("Mean absolute error")){
+                    double MAE = Double.parseDouble(item.split("                      ")[1]);
+                    pre_model.put("MAE",MAE);
+                }else if(item.contains("Root mean squared error")){
+                    double MSE = Double.parseDouble(item.split("                  ")[1]);
+                    pre_model.put("MSE",MSE);
+                }else if(item.contains("Relative absolute error")){
+                    double RAE = turn_Str_to_Dou(item.split("                  ")[1]);
+                    pre_model.put("RAE",RAE);
+                }else if(item.contains("Root relative squared error")){
+                    double RRSE = turn_Str_to_Dou(item.split("              ")[1]);
+                    pre_model.put("RRSE",RRSE);
+                    break;
+                }
+            }
+            jsonObject.put("performance",pre_model);
 
+            System.out.println(pre_model);
         }catch (Exception e){
             e.printStackTrace();
         }
+        return jsonObject;
+    }
+
+
+    public  static  double get_acc(double[] org,double[] pre){
+        int all=org.length;
+        int correct = 0;
+        for(int i=0;i<all;i++){
+            if(org[i]==pre[i]){
+                correct+=1;
+            }
+        }
+        double acc = correct/all;
+        return acc;
+    }
+
+    public static double turn_Str_to_Dou(String precent){
+        double number = Double.parseDouble(precent.split(" %")[0])/100;
+        return number;
     }
 
 
     public static void main(String[] args) {
-        MyDataset myDataset = new MyDataset("data\\flower_labels.csv");
-        myDataset.dataset_Partitioning(0.9);
-        System.out.println(myDataset.testset);
-        RandomForest(myDataset,100,0,1,0);
-//        MyDataset myDataset = new MyDataset("data\flower.csv");
-//        K_means(myDataset.dataset,3);
+//        MyDataset myDataset = new MyDataset("data\\flower_labels.csv");
+//        myDataset.dataset_Partitioning(0.9);
+////        System.out.println(myDataset.testset);
+//        RandomForest(myDataset,100,0,1,0);
+        MyDataset myDataset = new MyDataset("data\\flower.csv");
+        K_means(myDataset.dataset,3);
     }
 }
