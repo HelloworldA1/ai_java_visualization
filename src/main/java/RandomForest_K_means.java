@@ -71,6 +71,7 @@ public class RandomForest_K_means {
 
             for(int i=0;i<myDataset.testset.numInstances();i++){
                 System.out.println(myDataset.testset.get(i));
+
             }
             // 输出准确率
 //            System.out.println(eval.toSummaryString("title",true));
