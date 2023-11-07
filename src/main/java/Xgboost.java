@@ -2,7 +2,6 @@ import ml.dmlc.xgboost4j.java.Booster;
 import ml.dmlc.xgboost4j.java.DMatrix;
 import ml.dmlc.xgboost4j.java.XGBoost;
 import ml.dmlc.xgboost4j.java.XGBoostError;
-import org.apache.commons.math3.util.Precision;
 
 import java.util.HashMap;
 import java.util.Map;

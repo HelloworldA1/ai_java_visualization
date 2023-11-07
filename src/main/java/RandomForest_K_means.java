@@ -86,25 +86,30 @@ public class RandomForest_K_means {
 
             Evaluation eval = new Evaluation(myDataset.testset);
             double[] pre = eval.evaluateModel(randomForest,myDataset.testset);
+            int[] pred = new int[pre.length];
             for(int i=0;i<pre.length;i++){
-                pre[i] = Math.round(pre[i]);
-            }
-            for(double num:pre){
-//                System.out.println(num);
+                pred[i] = (int)Math.round(pre[i]);
             }
 
-            double[] org = new double[myDataset.testset.numInstances()];
+            int[] org = new int[myDataset.testset.numInstances()];
 
             for(int i=0;i<myDataset.testset.numInstances();i++){
-                org[i] = Double.parseDouble(myDataset.testset.get(i).toString().split(",")[4]);
+                org[i] = Integer.parseInt(myDataset.testset.get(i).toString().split(",")[4]);
             }
 
             Map<String,Double> pre_model = new HashMap<>();
 
 //            System.out.println(get_acc(org,pre));
 
-            pre_model.put("ACC",get_acc(org,pre));
-//            System.out.println(eval.recall(3));
+//            pre_model.put("ACC",get_acc(org,pre));
+
+            System.out.println("Matrix");
+            Matrix matrix = new Matrix(org,pred);
+            double[] all = matrix.get_all();
+            pre_model.put("precision",all[0]);
+            pre_model.put("recall",all[1]);
+            pre_model.put("f1score",all[2]);
+////            System.out.println(eval.recall(3));
             // 输出准确率
 
             System.out.println(eval.toSummaryString("",true));
@@ -156,11 +161,11 @@ public class RandomForest_K_means {
 
 
     public static void main(String[] args) {
-//        MyDataset myDataset = new MyDataset("data\\flower_labels.csv");
-//        myDataset.dataset_Partitioning(0.9);
-////        System.out.println(myDataset.testset);
-//        RandomForest(myDataset,100,0,1,0);
-        MyDataset myDataset = new MyDataset("data\\flower.csv");
-        K_means(myDataset.dataset,3);
+        MyDataset myDataset = new MyDataset("data\\flower_labels.csv");
+        myDataset.dataset_Partitioning(0.9);
+//        System.out.println(myDataset.testset);
+        RandomForest(myDataset,100,0,1,0);
+//        MyDataset myDataset = new MyDataset("data\\flower.csv");
+//        K_means(myDataset.dataset,3);
     }
 }
