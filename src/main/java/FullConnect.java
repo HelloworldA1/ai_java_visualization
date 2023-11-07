@@ -33,7 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class   LinearDataClassifier {
+public class FullConnect {
     public static JSONObject FullConnect(double learningRate, int batchSize, int nEpochs, int numHiddenNodes, String trainPtah, double trainRatio) throws Exception {
         int seed = 123;//随机种子
 

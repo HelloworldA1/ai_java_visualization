@@ -2,24 +2,20 @@ import ml.dmlc.xgboost4j.java.Booster;
 import ml.dmlc.xgboost4j.java.DMatrix;
 import ml.dmlc.xgboost4j.java.XGBoost;
 import ml.dmlc.xgboost4j.java.XGBoostError;
+import org.json.JSONObject;
 
+import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Xgboost {
     private static DMatrix trainMat = null;
     private static DMatrix testMat = null;
-    public static void xgboost(double eta,int depth,int nEpoch){
-        try{
+    public static JSONObject xgboost(double eta, int depth, int nEpoch)throws Exception{
             trainMat = new DMatrix("data\\train.txt");
-        } catch (XGBoostError xgBoostError) {
-            xgBoostError.printStackTrace();
-        }
-        try{
             testMat = new DMatrix("data\\test.txt");
-        }catch (XGBoostError xgBoostError){
-            xgBoostError.printStackTrace();
-        }
 
         Map<String,Object> params = new HashMap<String,Object>(){
             {
@@ -38,41 +34,50 @@ public class Xgboost {
             }
         };
 
-        try{
-            Booster booster = XGBoost.train(trainMat,params,nEpoch,watches,null,null);
+        Booster booster = XGBoost.train(trainMat,params,nEpoch,watches,null,null);
 
-            float[][] testPred = booster.predict(testMat);
-            double testAcc = calculateAccuracy(testPred, testMat);
-            System.out.println(testAcc);
-
-            booster.saveModel("Intermediate_steps_file\\xgboost_model");
-        }catch (XGBoostError xgBoostError){
-            xgBoostError.printStackTrace();
-        }
-
-    }
-
-    private static double calculateAccuracy(float[][] predictions, DMatrix dMatrix) {
-        try {
-            float[] labels = dMatrix.getLabel();
-            int correctCount = 0;
-
-            for (int i = 0; i < predictions.length; i++) {
-                int predictedLabel = Math.round(predictions[i][0]);
-                int actualLabel = (int) labels[i];
-                if (predictedLabel == actualLabel) {
-                    correctCount++;
-                }
+        float[][] testPred = booster.predict(testMat);
+        int[] org_labels = get_orglabel(testMat);
+        int[] pred_labels = get_predlabel(testPred);
+        Matrix matrix = new Matrix(org_labels,pred_labels);
+        double[] all_per  = matrix.get_all();
+        for(double per:all_per){
+                System.out.println(per);
             }
 
-            return (double) correctCount / predictions.length;
-        } catch (XGBoostError e) {
-            e.printStackTrace();
-            return 0.0;
-        }
+        Map<String,Double> per_model = new HashMap<>();
+        per_model.put("pecision",all_per[0]);
+        per_model.put("recall",all_per[1]);
+        per_model.put("f1score",all_per[2]);
+
+        booster.saveModel("Intermediate_steps_file\\xgboost_model");
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("performance",per_model);
+        return jsonObject;
     }
 
-    public static void main(String[] args) {
+    public static int[] get_orglabel(DMatrix dMatrix)throws Exception{
+            float[] list = dMatrix.getLabel();
+            int[] org_label = new int[list.length];
+            for(int i=0;i<list.length;i++) {
+                org_label[i] = (int) list[i];
+//                System.out.println(org_label[i]);
+            }
+            return org_label;
+    }
+
+    public static int[] get_predlabel(float[][] predictions){
+        int[] pred_label = new int[predictions.length];
+        for(int i=0;i<predictions.length;i++){
+            int predictedLabel = Math.round(predictions[i][0]);
+            pred_label[i] = predictedLabel;
+        }
+        return pred_label;
+    }
+
+
+    public static void main(String[] args) throws Exception{
         xgboost(0.1,6,50);
     }
 
