@@ -1,35 +1,86 @@
-import org.datavec.api.records.reader.RecordReader;
-import org.datavec.api.records.reader.impl.csv.CSVRecordReader;
+import org.datavec.api.records.reader.SequenceRecordReader;
+import org.datavec.api.records.reader.impl.csv.CSVSequenceRecordReader;
 import org.datavec.api.split.FileSplit;
-import org.datavec.api.writable.Writable;
-import org.deeplearning4j.iterator.LabeledSentenceProvider;
-import org.deeplearning4j.text.documentiterator.LabelAwareIterator;
-import org.deeplearning4j.text.sentenceiterator.labelaware.LabelAwareSentenceIterator;
-import org.deeplearning4j.text.tokenization.tokenizerfactory.DefaultTokenizerFactory;
-import org.nd4j.common.io.ClassPathResource;
-
+import org.deeplearning4j.datasets.datavec.SequenceRecordReaderDataSetIterator;
+import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
+import org.deeplearning4j.nn.conf.inputs.InputType;
+import org.deeplearning4j.nn.conf.layers.EmbeddingLayer;
+import org.deeplearning4j.nn.conf.layers.LSTM;
+import org.deeplearning4j.nn.conf.layers.RnnOutputLayer;
+import org.deeplearning4j.nn.conf.layers.recurrent.LastTimeStep;
+import org.deeplearning4j.nn.conf.layers.recurrent.SimpleRnn;
+import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
+import org.deeplearning4j.nn.weights.WeightInit;
+import org.nd4j.linalg.activations.Activation;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
+import org.nd4j.linalg.learning.config.Adam;
+import org.nd4j.linalg.lossfunctions.LossFunctions;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 public class RNN {
-    public static void csvDealing(String csvpath)throws Exception{
-        File input = new File(csvpath);
-        RecordReader recordReader = new CSVRecordReader(1,',');
-        recordReader.initialize(new FileSplit(input));
+    public static void rnn(int nEpoches)throws Exception{
+        SequenceRecordReader trainFeatures = new CSVSequenceRecordReader();
+        trainFeatures.initialize(new FileSplit(new File("data\\rnn_train.csv")));
 
-        List<String> textData = new ArrayList<>();
-        List<Integer> textlabel = new ArrayList<>();
+        SequenceRecordReader testFeatures = new CSVSequenceRecordReader();
+        testFeatures.initialize(new FileSplit(new File("data\\rnn_test.csv")));
 
-        while(recordReader.hasNext()){
-            List<Writable> record = recordReader.next();
-            textData.add(record.get(0).toString());
-            textlabel.add(record.get(1).toInt());
+
+        DataSetIterator trainData = new SequenceRecordReaderDataSetIterator(
+                trainFeatures,
+                1,
+                2,
+                1,
+                false
+        );
+
+        DataSetIterator testData = new SequenceRecordReaderDataSetIterator(
+                trainFeatures,
+                1,
+                2,
+                1,
+                false
+        );
+
+        int numCharactersInAlphabet = 26;  // 字母表大小
+        int embeddingSize = 10;  // 词嵌入维度
+        int lstmLayerSize = 256;  // LSTM 层大小
+        int numLabelClasses = 2;  // 分类的数量
+
+        MultiLayerNetwork net;
+        net = new MultiLayerNetwork(
+                new NeuralNetConfiguration.Builder()
+                        .seed(123)
+                        .updater(new Adam(0.001))
+                        .list()
+                        .layer(0, new EmbeddingLayer.Builder()
+                                .nIn(numCharactersInAlphabet)
+                                .nOut(embeddingSize)
+                                .build())
+                        .layer(1, new LSTM.Builder()
+                                .nIn(embeddingSize)
+                                .nOut(lstmLayerSize)
+                                .activation(Activation.RELU)
+                                .build())
+                        .layer(2, new RnnOutputLayer.Builder(LossFunctions.LossFunction.MCXENT)
+                                .activation(Activation.SOFTMAX)
+                                .nIn(lstmLayerSize)
+                                .nOut(numLabelClasses)
+                                .build())
+                        .setInputType(InputType.recurrent(embeddingSize))
+                        .build()
+        );
+        net.init();
+
+        for(int i=0;i<nEpoches;i++){
+            net.fit(trainData);
         }
 
     }
 
     public static void main(String[] args) throws Exception {
-        csvDealing("data\\train_rnn.csv");
+        rnn(10);
     }
+
 }
