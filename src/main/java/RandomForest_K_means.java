@@ -163,8 +163,9 @@ public class RandomForest_K_means {
     public static void main(String[] args) {
         MyDataset myDataset = new MyDataset("data\\flower_labels.csv");
         myDataset.dataset_Partitioning(0.9);
-//        System.out.println(myDataset.testset);
-        RandomForest(myDataset,100,0,1,0);
+        RandomForest(myDataset,100,0,1,0);//以上三句用于RandomForest,前两句照抄，最后一句里面的参数由前端提供。
+
+        //这两句是K-means，第一句照抄，后一句，第一个参数由第一句产生，后一个前端提供
 //        MyDataset myDataset = new MyDataset("data\\flower.csv");
 //        K_means(myDataset.dataset,3);
     }

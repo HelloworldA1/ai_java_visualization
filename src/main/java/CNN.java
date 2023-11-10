@@ -128,7 +128,7 @@ public class CNN {
     }
 
     public static void main(String[] args) throws Exception {
-        CNNmodel(0.001,64,10,50);
+        CNNmodel(0.001,64,10,50);//以上数据均由前端提供
     }
 
 }

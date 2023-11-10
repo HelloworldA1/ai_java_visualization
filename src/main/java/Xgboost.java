@@ -78,7 +78,7 @@ public class Xgboost {
 
 
     public static void main(String[] args) throws Exception{
-        xgboost(0.1,6,50);
+        xgboost(0.1,6,50);//全由前端提供
     }
 
 }

@@ -34,14 +34,16 @@ import java.util.List;
 import java.util.Map;
 
 public class FullConnect {
-    public static JSONObject FullConnect(double learningRate, int batchSize, int nEpochs, int numHiddenNodes, String trainPtah, double trainRatio) throws Exception {
+    public static JSONObject FullConnect(double learningRate, int batchSize, int nEpochs, int numHiddenNodes) throws Exception {
         int seed = 123;//随机种子
+
+        String trainPtah = "data\\flower_labels_noname.csv";
+        double trainRatio = 0.9;
 
         MyDataset myDataset = new MyDataset(trainPtah);
         int numlabel = myDataset.getNuminput();//标签类别数
         int LabelIndex = myDataset.getLabelIndex();//标签索引
         int numfeature = LabelIndex;//特征数
-
 
         String[] path = splitData(trainPtah,trainRatio);
         String trainpath = path[0];
@@ -221,6 +223,6 @@ public class FullConnect {
 //        Logger logger = LoggerFactory.getLogger("org.deeplearning4j");
 //        logger.info("Setting log level to INFO");
 //        System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "INFO");
-        FullConnect(0.01,12,30,20,"data\\flower_labels_noname.csv",0.9);
+        FullConnect(0.01,12,30,20);//数据全由前端提供
     }
 }
