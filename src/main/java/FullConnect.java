@@ -96,11 +96,11 @@ public class FullConnect {
             loss.put(index,score);
             index=index+1;
         }
-//        System.out.println(loss.toString());
+        System.out.println(loss.toString());
 
         Evaluation eval = new Evaluation(numlabel);
-        System.out.println(numfeature);
-        RegressionEvaluation eval_reg = new RegressionEvaluation(3);
+//        System.out.println(numfeature);
+//        RegressionEvaluation eval_reg = new RegressionEvaluation(3);
 
         while (testIter.hasNext()) {
             DataSet t = testIter.next();
@@ -108,7 +108,7 @@ public class FullConnect {
             INDArray labels = t.getLabels();
             INDArray predicted = model.output(features, false);
             eval.eval(labels, predicted);
-            eval_reg.eval(labels,predicted);
+//            eval_reg.eval(labels,predicted);
         }
         //An alternate way to do the above loop
 //        Evaluation evalResults = model.evaluate(testIter);
@@ -134,22 +134,22 @@ public class FullConnect {
             }
         }
 
-        String out = eval_reg.stats();
-        String[] outs = out.split("\n");
-        for(String line:outs){
-            if(line.contains("Column")){
-                continue;
-            }
-            else{
-                String[] out_line = line.split("    ");
-                performance.put ("MSE",Double.parseDouble(out_line[1].replaceAll("^\\s+", "")));
-                performance.put ("MAE",Double.parseDouble(out_line[2].replaceAll("^\\s+", "")));
-                performance.put ("RMSE",Double.parseDouble(out_line[3].replaceAll("^\\s+", "")));
-                performance.put ("RSE",Double.parseDouble(out_line[4].replaceAll("^\\s+", "")));
-                performance.put ("R^2",Double.parseDouble(out_line[5].replaceAll("^\\s+", "")));
-                break;
-            }
-        }
+//        String out = eval_reg.stats();
+//        String[] outs = out.split("\n");
+//        for(String line:outs){
+//            if(line.contains("Column")){
+//                continue;
+//            }
+//            else{
+//                String[] out_line = line.split("    ");
+//                performance.put ("MSE",Double.parseDouble(out_line[1].replaceAll("^\\s+", "")));
+//                performance.put ("MAE",Double.parseDouble(out_line[2].replaceAll("^\\s+", "")));
+//                performance.put ("RMSE",Double.parseDouble(out_line[3].replaceAll("^\\s+", "")));
+//                performance.put ("RSE",Double.parseDouble(out_line[4].replaceAll("^\\s+", "")));
+//                performance.put ("R^2",Double.parseDouble(out_line[5].replaceAll("^\\s+", "")));
+//                break;
+//            }
+//        }
 
         System.out.println(performance.toString());
 

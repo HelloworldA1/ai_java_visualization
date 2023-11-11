@@ -55,7 +55,7 @@ public class Catboost {
     }
 
     private static int[] hashCategoricalFeature(String feature) {
-        // 这里简单示范，实际可能需要更复杂的哈希算法
+
         return new int[] {feature.hashCode()};
     }
 

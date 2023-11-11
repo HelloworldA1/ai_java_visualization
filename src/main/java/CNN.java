@@ -24,6 +24,7 @@ import org.deeplearning4j.nn.conf.layers.*;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
+import org.json.JSONObject;
 import org.nd4j.common.io.ClassPathResource;
 import org.nd4j.evaluation.classification.Evaluation;
 import org.nd4j.linalg.activations.Activation;
@@ -41,9 +42,11 @@ import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.deeplearning4j.datasets.fetchers.MnistDataFetcher;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 public class CNN {
-    public static void CNNmodel(double learningRate, int batchSize, int nEpochs, int numHiddenNodes) throws Exception {
+    public static JSONObject CNNmodel(double learningRate, int batchSize, int nEpochs, int numHiddenNodes) throws Exception {
         int seed = 123;//随机种子
         int nChannels = 1;
 //        int numRows = 28;
@@ -96,17 +99,18 @@ public class CNN {
 //        model.setListeners(new ScoreIterationListener(10));  //Print score every 10 parameter updates
 
 //        System.out.println("/////////");
+        Map<Integer,Double> loss = new HashMap<>();
         for(int i = 0;i<nEpochs;i++) {
             model.fit(trainIter);
             double score = model.score();
 //            System.out.println("1111");
             System.out.println(score);
 //            System.out.println("2222");
-//            loss.put(index,score);
-//            index=index+1;
+            loss.put(i,score);
         }
 
-//        model.fit(trainIter, nEpochs);
+        System.out.println(loss.toString());
+
 
         System.out.println("Evaluate model....");
         Evaluation eval = model.evaluate(testIter);
@@ -123,8 +127,31 @@ public class CNN {
         //Print the evaluation statistics
         System.out.println(eval.stats());
 
-        System.out.println("\n****************Example finished********************");
-        //Training is complete. Code that follows is for plotting the data & predictions only
+        Map<String,Double> performance = new HashMap<>();
+        String evalStats = eval.stats();
+        String[] lines = evalStats.split("\n");
+        for (String line : lines) {
+            if (line.contains("Accuracy")) {//通过率或准确率
+                String[] text = line.split("[:,(\t]");
+                performance.put ("Accuracy",Double.parseDouble(text[1].replaceAll("^\\s+", "")));
+            }else if (line.contains("Precision")) {
+                String[] text = line.split("[:,(\t]");
+                performance.put ("Precision",Double.parseDouble(text[1].replaceAll("^\\s+", "")));
+            }else if(line.contains("Recall")){
+                String[] text = line.split("[:,(\t]");
+                performance.put ("Recall",Double.parseDouble(text[1].replaceAll("^\\s+", "")));
+            }else if(line.contains("F1 Score")){
+                String[] text = line.split("[:,(\t]");
+                performance.put ("F1 Score",Double.parseDouble(text[1].replaceAll("^\\s+", "")));
+                break;
+            }
+        }
+        System.out.println(performance.toString());
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("loss",loss);
+        jsonObject.put("performance",performance);
+        return jsonObject;
     }
 
     public static void main(String[] args) throws Exception {
