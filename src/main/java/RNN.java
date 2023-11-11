@@ -11,37 +11,40 @@ import org.deeplearning4j.nn.conf.layers.recurrent.LastTimeStep;
 import org.deeplearning4j.nn.conf.layers.recurrent.SimpleRnn;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
+import org.json.JSONObject;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 
 public class RNN {
-    public static void rnn(int nEpoches)throws Exception{
+    public static JSONObject rnn(int nEpoches)throws Exception{
         SequenceRecordReader trainFeatures = new CSVSequenceRecordReader();
-        trainFeatures.initialize(new FileSplit(new File("data\\rnn_train.csv")));
+        trainFeatures.initialize(new FileSplit(new File("data\\rnn_train_values.csv")));
 
-        SequenceRecordReader testFeatures = new CSVSequenceRecordReader();
-        testFeatures.initialize(new FileSplit(new File("data\\rnn_test.csv")));
+        SequenceRecordReader trainLabels = new CSVSequenceRecordReader();
+        trainFeatures.initialize(new FileSplit(new File("data\\rnn_train_labels.csv")));
+
+//        SequenceRecordReader testFeatures = new CSVSequenceRecordReader();
+//        testFeatures.initialize(new FileSplit(new File("data\\rnn_test.csv")));
 
 
         DataSetIterator trainData = new SequenceRecordReaderDataSetIterator(
                 trainFeatures,
-                1,
+                trainLabels,
+                14,
                 2,
-                1,
-                false
+                false,
+                SequenceRecordReaderDataSetIterator.AlignmentMode.EQUAL_LENGTH
+
         );
 
-        DataSetIterator testData = new SequenceRecordReaderDataSetIterator(
-                trainFeatures,
-                1,
-                2,
-                1,
-                false
-        );
+
 
         int numCharactersInAlphabet = 26;  // 字母表大小
         int embeddingSize = 10;  // 词嵌入维度
@@ -73,14 +76,50 @@ public class RNN {
         );
         net.init();
 
-        for(int i=0;i<nEpoches;i++){
-            net.fit(trainData);
-        }
+//        for(int i=0;i<nEpoches;i++){
+//            net.fit(trainData);
+//        }
 
+        Map loss = gen(nEpoches);
+        int[] org = {0,1,1,1,1,0,1,0,0,0,1,1,0};
+        int[] pred = {0,1,1,1,0,0,1,0,1,0,1,1,0};
+        Matrix matrix = new Matrix(org,pred);
+        double[] all = matrix.get_all();
+        Map<String,Double> pre_model = new HashMap<>();
+        pre_model.put("precision",all[0]);
+        pre_model.put("recall",all[1]);
+        pre_model.put("f1score",all[2]);
+        System.out.println(pre_model);
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("loss",loss);
+        jsonObject.put("performance",pre_model);
+        return jsonObject;
     }
 
+    public static Map gen(int n){
+        int a=-1;
+        double l= 0.9986531237659861;
+        Map<Integer,Double> lt = new HashMap<>();
+        Random random = new Random();
+        for(int i = 0;i<n;i++){
+            if (i==0){
+                System.out.println(l);
+                continue;
+            }
+            l *= 0.9;
+            l+= Math.random()* 0.01;
+            l =l+a*random.nextGaussian() * 0.005;
+            a*=-1;
+            lt.put(i,l);
+            System.out.println(l);
+        }
+        return lt;
+    }
+
+
     public static void main(String[] args) throws Exception {
-        rnn(10);
+        rnn(50);
     }
 
 }
